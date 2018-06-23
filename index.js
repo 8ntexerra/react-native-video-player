@@ -4,6 +4,10 @@ import { Image, Platform, StyleSheet, TouchableOpacity, View, ViewPropTypes } fr
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video'; // eslint-disable-line
 
+import { stats } from '../../src/services/stats'
+
+console.disableYellowBox = true;
+
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
     backgroundColor: 'black',
@@ -102,6 +106,8 @@ export default class VideoPlayer extends Component {
     this.wasPlayingBeforeSeek = props.autoplay;
     this.seekTouchStart = 0;
     this.seekProgressStart = 0;
+    // monkey patching
+    this.playerMode = props.playerMode
 
     this.onLayout = this.onLayout.bind(this);
     this.onStartPress = this.onStartPress.bind(this);
@@ -125,6 +131,7 @@ export default class VideoPlayer extends Component {
   }
 
   componentWillUnmount() {
+    stats.deactivate()
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
       this.controlsTimeout = null;
@@ -139,6 +146,7 @@ export default class VideoPlayer extends Component {
   }
 
   onStartPress() {
+    //console.log('---> onStartPress')
     if (this.props.onStart) {
       this.props.onStart();
     }
@@ -146,12 +154,13 @@ export default class VideoPlayer extends Component {
     this.setState({
       isPlaying: true,
       isStarted: true,
-    });
+    }, () => stats.add(this.playerMode).activate());
 
     this.hideControls();
   }
 
   onProgress(event) {
+    //console.log('---> onProgress')
     if (this.state.isSeeking) {
       return;
     }
@@ -164,12 +173,13 @@ export default class VideoPlayer extends Component {
   }
 
   onEnd(event) {
+    //console.log('---> onEnd')
     if (this.props.onEnd) {
       this.props.onEnd(event);
     }
 
     if (this.props.endWithThumbnail) {
-      this.setState({ isStarted: false });
+      this.setState({ isStarted: false }, () => stats.deactivate());
       this.player.dismissFullscreenPlayer();
     }
 
@@ -179,26 +189,34 @@ export default class VideoPlayer extends Component {
     if (!this.props.loop) {
       this.setState({
         isPlaying: false,
-      });
+      }, () => stats.deactivate());
     }
   }
 
   onLoad(event) {
+    //console.log('---> onLoad')
     if (this.props.onLoad) {
       this.props.onLoad(event);
     }
 
     const { duration } = event;
-    this.setState({ duration });
+    this.setState({ duration }, () => this.state.duration && stats.add(this.playerMode).activate());
   }
 
   onPlayPress() {
+    //console.log('---> onPlayPress')
     if (this.props.onPlayPress) {
       this.props.onPlayPress();
     }
 
     this.setState({
       isPlaying: !this.state.isPlaying,
+    }, () => {
+      if (this.state.isPlaying) {
+        stats.add(this.playerMode).activate()
+      } else {
+        stats.deactivate()
+      }
     });
     this.showControls();
   }
