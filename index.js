@@ -6,8 +6,6 @@ import Video from 'react-native-video'; // eslint-disable-line
 
 import { stats } from '../../src/services/stats'
 
-console.disableYellowBox = true;
-
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
     backgroundColor: 'black',
@@ -200,7 +198,7 @@ export default class VideoPlayer extends Component {
     }
 
     const { duration } = event;
-    this.setState({ duration }, () => this.state.duration && stats.add(this.playerMode).activate());
+    this.setState({ duration }, () => stats.add(this.playerMode).activate());
   }
 
   onPlayPress() {
