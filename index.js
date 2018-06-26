@@ -198,7 +198,7 @@ export default class VideoPlayer extends Component {
     }
 
     const { duration } = event;
-    this.setState({ duration }, () => stats.add(this.playerMode).activate());
+    this.setState({ duration }, () => !this.state.duration && stats.add(this.playerMode).activate());
   }
 
   onPlayPress() {
