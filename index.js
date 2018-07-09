@@ -101,7 +101,7 @@ export default class VideoPlayer extends Component {
     };
 
     this.seekBarWidth = 200;
-    this.wasPlayingBeforeSeek = props.autoplay;
+    this.wasPlayingBeforeSeek = false;
     this.seekTouchStart = 0;
     this.seekProgressStart = 0;
     // monkey patching
@@ -120,6 +120,7 @@ export default class VideoPlayer extends Component {
     this.onSeekGrant = this.onSeekGrant.bind(this);
     this.onSeekRelease = this.onSeekRelease.bind(this);
     this.onSeek = this.onSeek.bind(this);
+    this.onSeekByPosition = this.onSeekByPosition.bind(this);
   }
 
   componentDidMount() {
@@ -192,13 +193,16 @@ export default class VideoPlayer extends Component {
   }
 
   onLoad(event) {
-    //console.log('---> onLoad')
+    // console.log('---> onLoad', this.state.isPlaying)
     if (this.props.onLoad) {
       this.props.onLoad(event);
     }
 
     const { duration } = event;
-    this.setState({ duration }, () => !this.state.duration && stats.add(this.playerMode).activate());
+    this.setState({ duration }, () => this.state.isPlaying && !this.wasPlayingBeforeSeek
+      ? stats.add(this.playerMode).activate()
+      : null
+    )
   }
 
   onPlayPress() {
@@ -269,6 +273,12 @@ export default class VideoPlayer extends Component {
       isPlaying: this.wasPlayingBeforeSeek,
     });
     this.showControls();
+  }
+
+  onSeekByPosition(position) {
+    this.player.seek(position);
+
+    this.wasPlayingBeforeSeek = this.state.isPlaying;
   }
 
   onSeek(e) {
@@ -371,7 +381,7 @@ export default class VideoPlayer extends Component {
             customStyles.seekBarProgress,
           ]}
         />
-        { !fullWidth && !disableSeek ? (
+        {!fullWidth && !disableSeek ? (
           <View
             style={[
               styles.seekBarKnob,
@@ -387,7 +397,7 @@ export default class VideoPlayer extends Component {
             onResponderRelease={this.onSeekRelease}
             onResponderTerminate={this.onSeekRelease}
           />
-        ) : null }
+        ) : null}
         <View style={[
           styles.seekBarBackground,
           { flexGrow: 1 - this.state.progress },
@@ -469,8 +479,8 @@ export default class VideoPlayer extends Component {
             { marginTop: -this.getSizeStyles().height },
           ]}
         >
-          <TouchableOpacity 
-            style={styles.overlayButton} 
+          <TouchableOpacity
+            style={styles.overlayButton}
             onPress={() => {
               this.showControls();
               if (pauseOnPress)
@@ -479,7 +489,7 @@ export default class VideoPlayer extends Component {
             onLongPress={() => {
               if (fullScreenOnLongPress && Platform.OS !== 'android')
                 this.onToggleFullScreen();
-            }} 
+            }}
           />
         </View>
         {((!this.state.isPlaying) || this.state.isControlsVisible)
