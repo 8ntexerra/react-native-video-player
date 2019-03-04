@@ -122,7 +122,7 @@ export default class VideoPlayer extends Component {
     this.onSeekRelease = this.onSeekRelease.bind(this);
     this.onSeek = this.onSeek.bind(this);
     this.onSeekByPosition = this.onSeekByPosition.bind(this);
-    this.activateStatistics = this.activateStatistics.bind(this);
+    this.collectStatistics = this.collectStatistics.bind(this);
     this.deactivateStatistics = this.deactivateStatistics.bind(this);
   }
 
