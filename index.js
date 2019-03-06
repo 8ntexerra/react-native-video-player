@@ -142,7 +142,7 @@ export default class VideoPlayer extends Component {
   }
 
   deactivateStatistics () {
-    this.state.stats && this.deactivateStatistics()
+    this.state.stats && stats.deactivate()
   }
 
   collectStatistics () {
@@ -345,29 +345,29 @@ export default class VideoPlayer extends Component {
     const { customStyles } = this.props;
     return (
       <TouchableOpacity
-    style={[styles.playButton, customStyles.playButton]}
-    onPress={this.onStartPress}
+        style={[styles.playButton, customStyles.playButton]}
+        onPress={this.onStartPress}
       >
-      <Icon style={[styles.playArrow, customStyles.playArrow]} name="play-arrow" size={42} />
-    </TouchableOpacity>
-  );
+        <Icon style={[styles.playArrow, customStyles.playArrow]} name="play-arrow" size={42} />
+      </TouchableOpacity>
+    );
   }
 
   renderThumbnail() {
     const { thumbnail, style, customStyles, ...props } = this.props;
     return (
       <Image
-    {...props}
-    style={[
+      {...props}
+      style={[
         styles.thumbnail,
-      this.getSizeStyles(),
-      style,
-      customStyles.thumbnail,
-  ]}
-    source={thumbnail}
-      >
+        this.getSizeStyles(),
+        style,
+        customStyles.thumbnail,
+      ]}
+      source={thumbnail}
+     >
       {this.renderStartButton()}
-      </Image>
+    </Image>
   );
   }
 
@@ -375,29 +375,29 @@ export default class VideoPlayer extends Component {
     const { customStyles, disableSeek } = this.props;
     return (
       <View
-    style={[
-        styles.seekBar,
-      fullWidth ? styles.seekBarFullWidth : {},
-      customStyles.seekBar,
-      fullWidth ? customStyles.seekBarFullWidth : {},
-  ]}
-    onLayout={this.onSeekBarLayout}
+        style={[
+          styles.seekBar,
+          fullWidth ? styles.seekBarFullWidth : {},
+          customStyles.seekBar,
+          fullWidth ? customStyles.seekBarFullWidth : {},
+        ]}
+        onLayout={this.onSeekBarLayout}
       >
       <View
-    style={[
-        { flexGrow: this.state.progress },
-      styles.seekBarProgress,
-      customStyles.seekBarProgress,
-  ]}
+        style={[
+          { flexGrow: this.state.progress },
+          styles.seekBarProgress,
+          customStyles.seekBarProgress,
+        ]}
     />
     {!fullWidth && !disableSeek ? (
       <View
-      style={[
+        style={[
           styles.seekBarKnob,
-        customStyles.seekBarKnob,
-        this.state.isSeeking ? { transform: [{ scale: 1 }] } : {},
-        this.state.isSeeking ? customStyles.seekBarKnobSeeking : {},
-    ]}
+          customStyles.seekBarKnob,
+          this.state.isSeeking ? { transform: [{ scale: 1 }] } : {},
+          this.state.isSeeking ? customStyles.seekBarKnobSeeking : {},
+        ]}
       hitSlop={{ top: 20, bottom: 20, left: 10, right: 20 }}
       onStartShouldSetResponder={this.onSeekStartResponder}
       onMoveShouldSetPanResponder={this.onSeekMoveResponder}
@@ -407,50 +407,50 @@ export default class VideoPlayer extends Component {
       onResponderTerminate={this.onSeekRelease}
       />
     ) : null}
-  <View style={[
-        styles.seekBarBackground,
-    { flexGrow: 1 - this.state.progress },
-    customStyles.seekBarBackground,
-  ]} />
+      <View style={[
+      styles.seekBarBackground,
+      { flexGrow: 1 - this.state.progress },
+      customStyles.seekBarBackground,
+    ]} />
     </View>
-  );
+    );
   }
 
   renderControls() {
     const { customStyles } = this.props;
     return (
       <View style={[styles.controls, customStyles.controls]}>
-  <TouchableOpacity
-    onPress={this.onPlayPress}
-    style={[customStyles.controlButton, customStyles.playControl]}
-  >
-  <Icon
-    style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
-    name={this.state.isPlaying ? 'pause' : 'play-arrow'}
-    size={32}
-    />
+        <TouchableOpacity
+          onPress={this.onPlayPress}
+          style={[customStyles.controlButton, customStyles.playControl]}
+        >
+          <Icon
+              style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
+              name={this.state.isPlaying ? 'pause' : 'play-arrow'}
+              size={32}
+          />
     </TouchableOpacity>
-    {this.renderSeekBar()}
-    {this.props.muted ? null : (
-      <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
-      <Icon
-      style={[styles.extraControl, customStyles.controlIcon]}
-      name={this.state.isMuted ? 'volume-off' : 'volume-up'}
-      size={24}
-      />
-      </TouchableOpacity>
-    )}
-    {(Platform.OS === 'android' || this.props.disableFullscreen) ? null : (
-      <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
-      <Icon
-      style={[styles.extraControl, customStyles.controlIcon]}
-      name="fullscreen"
-      size={32}
-      />
-      </TouchableOpacity>
-    )}
-  </View>
-  );
+        {this.renderSeekBar()}
+        {this.props.muted ? null : (
+          <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
+            <Icon
+              style={[styles.extraControl, customStyles.controlIcon]}
+              name={this.state.isMuted ? 'volume-off' : 'volume-up'}
+              size={24}
+            />
+          </TouchableOpacity>
+        )}
+        {(Platform.OS === 'android' || this.props.disableFullscreen) ? null : (
+          <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
+            <Icon
+              style={[styles.extraControl, customStyles.controlIcon]}
+              name="fullscreen"
+              size={32}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+    );
   }
 
   renderVideo() {
@@ -465,46 +465,46 @@ export default class VideoPlayer extends Component {
     } = this.props;
     return (
       <View style={customStyles.videoWrapper}>
-      <Video
-    {...props}
-    style={[
-        styles.video,
-      this.getSizeStyles(),
-      style,
-      customStyles.video,
-  ]}
-    ref={p => { this.player = p; }}
-    muted={this.props.muted || this.state.isMuted}
-    paused={!this.state.isPlaying}
-    onProgress={this.onProgress}
-    onEnd={this.onEnd}
-    onLoad={this.onLoad}
-    source={video}
-    resizeMode={resizeMode}
-    />
-    <View
-    style={[
-        this.getSizeStyles(),
-    { marginTop: -this.getSizeStyles().height },
-  ]}
-  >
-  <TouchableOpacity
-    style={styles.overlayButton}
-    onPress={() => {
-      this.showControls();
-      if (pauseOnPress)
-        this.onPlayPress();
-    }}
-    onLongPress={() => {
-      if (fullScreenOnLongPress && Platform.OS !== 'android')
-        this.onToggleFullScreen();
-    }}
-    />
-    </View>
-    {((!this.state.isPlaying) || this.state.isControlsVisible)
-      ? this.renderControls() : this.renderSeekBar(true)}
-  </View>
-  );
+        <Video
+          {...props}
+          style={[
+            styles.video,
+            this.getSizeStyles(),
+            style,
+            customStyles.video,
+          ]}
+          ref={p => { this.player = p; }}
+          muted={this.props.muted || this.state.isMuted}
+          paused={!this.state.isPlaying}
+          onProgress={this.onProgress}
+          onEnd={this.onEnd}
+          onLoad={this.onLoad}
+          source={video}
+          resizeMode={resizeMode}
+      />
+        <View
+        style={[
+          this.getSizeStyles(),
+          { marginTop: -this.getSizeStyles().height },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.overlayButton}
+          onPress={() => {
+            this.showControls();
+            if (pauseOnPress)
+              this.onPlayPress();
+          }}
+          onLongPress={() => {
+            if (fullScreenOnLongPress && Platform.OS !== 'android')
+              this.onToggleFullScreen();
+          }}
+        />
+      </View>
+        {((!this.state.isPlaying) || this.state.isControlsVisible)
+          ? this.renderControls() : this.renderSeekBar(true)}
+      </View>
+    );
   }
 
   renderContent() {
@@ -516,8 +516,8 @@ export default class VideoPlayer extends Component {
     } else if (!isStarted) {
       return (
         <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>
-      {this.renderStartButton()}
-    </View>
+          {this.renderStartButton()}
+        </View>
     );
     }
     return this.renderVideo();
@@ -526,9 +526,9 @@ export default class VideoPlayer extends Component {
   render() {
     return (
       <View onLayout={this.onLayout} style={this.props.customStyles.wrapper}>
-      {this.renderContent()}
+        {this.renderContent()}
       </View>
-  );
+    );
   }
 }
 
