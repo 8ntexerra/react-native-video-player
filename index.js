@@ -122,8 +122,8 @@ export default class VideoPlayer extends Component {
     this.onSeekRelease = this.onSeekRelease.bind(this);
     this.onSeek = this.onSeek.bind(this);
     this.onSeekByPosition = this.onSeekByPosition.bind(this);
-    this.collectStatistics = this.collectStatistics.bind(this);
-    this.deactivateStatistics = this.deactivateStatistics.bind(this);
+    this._collectStatistics = this._collectStatistics.bind(this);
+    this.statisticsCall = this.statisticsCall.bind(this);
   }
 
   componentDidMount() {
@@ -134,19 +134,28 @@ export default class VideoPlayer extends Component {
   }
 
   componentWillUnmount() {
-    this.deactivateStatistics()
+    this._deactivateStatistics()
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
       this.controlsTimeout = null;
     }
   }
 
-  deactivateStatistics () {
-    this.state.stats && stats.deactivate()
+  _deactivateStatistics () {
+    stats.deactivate()
   }
 
-  collectStatistics () {
-    this.state.stats && this.state.isPlaying && stats.add(this.playerMode).activate()
+  _collectStatistics () {
+    stats.add(this.playerMode).activate()
+  }
+
+  statisticsCall () {
+    if (!this.state.stats) return undefined
+
+    const { isPlaying, isStarted } = this.state
+    return isPlaying && isStarted || (isPlaying && this.wasPlayingBeforeSeek)
+      ? this._collectStatistics()
+      : this._deactivateStatistics()
   }
 
   onLayout(event) {
@@ -157,7 +166,6 @@ export default class VideoPlayer extends Component {
   }
 
   onStartPress() {
-    //console.log('---> onStartPress')
     if (this.props.onStart) {
       this.props.onStart();
     }
@@ -165,13 +173,12 @@ export default class VideoPlayer extends Component {
     this.setState({
       isPlaying: true,
       isStarted: true,
-    }, () => this.collectStatistics());
+    }, () => this.statisticsCall());
 
     this.hideControls();
   }
 
   onProgress(event) {
-    //console.log('---> onProgress')
     if (this.state.isSeeking) {
       return;
     }
@@ -184,13 +191,12 @@ export default class VideoPlayer extends Component {
   }
 
   onEnd(event) {
-    //console.log('---> onEnd')
     if (this.props.onEnd) {
       this.props.onEnd(event);
     }
 
     if (this.props.endWithThumbnail) {
-      this.setState({ isStarted: false }, () => this.deactivateStatistics());
+      this.setState({ isStarted: false }, () => this.statisticsCall());
       this.player.dismissFullscreenPlayer();
     }
 
@@ -200,35 +206,27 @@ export default class VideoPlayer extends Component {
     if (!this.props.loop) {
       this.setState({
         isPlaying: false,
-      }, () => this.deactivateStatistics());
+      }, () => this.statisticsCall());
     }
   }
 
   onLoad(event) {
-    // console.log('---> onLoad', this.state.isPlaying)
     if (this.props.onLoad) {
       this.props.onLoad(event);
     }
 
     const { duration } = event;
-    this.setState({ duration }, () => !this.wasPlayingBeforeSeek && this.collectStatistics())
+    this.setState({ duration }, () => this.statisticsCall())
   }
 
   onPlayPress() {
-    //console.log('---> onPlayPress')
     if (this.props.onPlayPress) {
       this.props.onPlayPress();
     }
 
     this.setState({
       isPlaying: !this.state.isPlaying,
-    }, () => {
-      if (this.state.isPlaying) {
-        this.collectStatistics()
-      } else {
-        this.deactivateStatistics()
-      }
-    });
+    }, () => this.statisticsCall());
     this.showControls();
   }
 
