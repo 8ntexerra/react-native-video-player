@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Image, Platform, StyleSheet, TouchableOpacity, View, ViewPropTypes } from 'react-native';
+import { Image, Platform, StyleSheet, TouchableOpacity, View, Text, ViewPropTypes } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video'; // eslint-disable-line
 
 import { stats } from '../../src/services/stats'
+
+import { isTablet } from '../../src/styles'
 
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
@@ -409,39 +411,88 @@ export default class VideoPlayer extends Component {
       onResponderTerminate={this.onSeekRelease}
       />
     ) : null}
-      <View style={[
+      {/* <View style={[
       styles.seekBarBackground,
       { flexGrow: 1 - this.state.progress },
       customStyles.seekBarBackground,
-    ]} />
+    ]} /> */}
     </View>
     );
   }
 
   renderControls() {
     const { customStyles } = this.props;
+    const isHLS = this.playerMode === 'TV'
     return (
-      <View style={[styles.controls, customStyles.controls]}>
+      <View style={[styles.controls, customStyles.controls, !isTablet ? { marginTop: -60 } : {} ]}>
+        {isHLS ?
+          <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
+            <Icon
+              style={[styles.extraControl, customStyles.controlIcon, { color: 'red' }]}
+              name={'fiber-manual-record'}
+              color='#FF0000'
+              size={18}
+            />
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginTop: 10}}>LIVE</Text>
+          </View>
+          : <View style={[customStyles.controlButton, { margin: 30 }]} />}
+
+        {isHLS
+        ? <>
+        <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 20, alignItems: 'center' }}>
+          <Icon name={'chevron-left'} color={'white'} size={32}/>
+          <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }} >swipe</Text>
+        </View>
+        <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 20, alignItems: 'center' }}>
+        <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }} >swipe</Text>
+          <Icon name={'chevron-right'} color={'white'} size={32}/>
+        </View>
+        </>
+        : <>
+          <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 50, alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => this.props.onSkipVideo('prev')}>
+              <Icon name={'skip-previous'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+            </TouchableOpacity>
+          </View>
+          <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 50, alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => this.props.onSkipVideo('next')}>
+              <Icon name={'skip-next'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+            </TouchableOpacity>
+          </View>
+        </>}
+
+
         <TouchableOpacity
           onPress={this.onPlayPress}
-          style={[customStyles.controlButton, customStyles.playControl]}
+          style={[customStyles.controlButton, customStyles.playControl,
+            {
+              position: 'absolute',
+              top: -this.getSizeStyles().height / 2 + (isTablet ? 15 : 30),
+              left: this.getSizeStyles().width / 2 - (isTablet ? 45 : 30) }
+          ]}
         >
           <Icon
               style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
               name={this.state.isPlaying ? 'pause' : 'play-arrow'}
-              size={32}
+              size={isTablet ? 80 : 52}
           />
     </TouchableOpacity>
         {this.renderSeekBar()}
+
+        {/* <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginTop: 10}}>{this.state.duration}</Text>
+          </View> */}
+
         {this.props.muted ? null : (
           <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
             <Icon
-              style={[styles.extraControl, customStyles.controlIcon]}
+              style={[styles.extraControl, customStyles.controlIcon, isTablet ? { marginTop: 4 } : {}]}
               name={this.state.isMuted ? 'volume-off' : 'volume-up'}
               size={24}
             />
           </TouchableOpacity>
         )}
+
         {(Platform.OS === 'android' || this.props.disableFullscreen) ? null : (
           <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
             <Icon
@@ -504,7 +555,9 @@ export default class VideoPlayer extends Component {
         />
       </View>
         {((!this.state.isPlaying) || this.state.isControlsVisible)
-          ? this.renderControls() : this.renderSeekBar(true)}
+          ? this.renderControls()
+          : null}
+          {/* : this.renderSeekBar(true)} */}
       </View>
     );
   }
