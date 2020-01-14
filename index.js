@@ -1,11 +1,20 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Image, Platform, StyleSheet, TouchableOpacity, View, Text, ViewPropTypes } from 'react-native';
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Text,
+  ViewPropTypes,
+  Animated
+} from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import IconFA from 'react-native-fontawesome-pro';
 import Video from 'react-native-video'; // eslint-disable-line
 
 import { stats } from '../../src/services/stats'
-
 import { isTablet } from '../../src/styles'
 
 const styles = StyleSheet.create({
@@ -306,6 +315,16 @@ export default class VideoPlayer extends Component {
     this.player.seek(progress * this.state.duration);
   }
 
+  onPressReplay = event => {
+    this.props.onPressReplay(event)
+    this.hideControls()
+  }
+
+  onPressForward = event => {
+    this.props.onPressForward(event)
+    this.hideControls()
+  }
+
   getSizeStyles() {
     const { videoWidth, videoHeight } = this.props;
     const { width } = this.state;
@@ -421,8 +440,13 @@ export default class VideoPlayer extends Component {
   }
 
   renderControls() {
-    const { customStyles } = this.props;
+    const { customStyles, liveRewind, rewindParams } = this.props;
     const isHLS = this.playerMode === 'TV'
+
+    const playLeft = this.getSizeStyles().width / 2 - (isTablet ? 45 : 30)
+    const playIconSize = isTablet ? 80 : 52
+    const rewindIconSize = isTablet ? 35 : 22
+
     return (
       <View style={[styles.controls, customStyles.controls, !isTablet ? { marginTop: -60 } : {} ]}>
         {isHLS ?
@@ -438,28 +462,49 @@ export default class VideoPlayer extends Component {
           : <View style={[customStyles.controlButton, { margin: 30 }]} />}
 
         {isHLS
-        ? <>
-        <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 20, alignItems: 'center' }}>
-          <Icon name={'chevron-left'} color={'white'} size={32}/>
-          <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }} >swipe</Text>
-        </View>
-        <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 20, alignItems: 'center' }}>
-        <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }} >swipe</Text>
-          <Icon name={'chevron-right'} color={'white'} size={32}/>
-        </View>
-        </>
-        : <>
-          <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 50, alignItems: 'center'}}>
-            <TouchableOpacity onPress={() => this.props.onSkipVideo('prev')}>
-              <Icon name={'skip-previous'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
-            </TouchableOpacity>
-          </View>
-          <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 50, alignItems: 'center'}}>
-            <TouchableOpacity onPress={() => this.props.onSkipVideo('next')}>
-              <Icon name={'skip-next'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
-            </TouchableOpacity>
-          </View>
-        </>}
+          ? <>
+            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 0, alignItems: 'center' }}>
+              <Icon name={'chevron-left'} color={'white'} size={32}/>
+              <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginLeft: -5 }} >swipe</Text>
+
+            </View>
+            {
+              liveRewind
+                ? <>
+                  <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), left: (this.getSizeStyles().width - playIconSize)  / 2 - rewindIconSize - 10, alignItems: 'center' }}>
+                    { rewindParams.rewindTimeBack ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`${rewindParams.rewindTimeBack} sec`}</Text> : null }
+                  </View>
+                  <TouchableOpacity style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), left: (this.getSizeStyles().width - playIconSize)  / 2 - rewindIconSize, alignItems: 'center' }} onPress={this.onPressReplay}>
+                    <IconFA name='undo-alt' size={rewindIconSize} color={'white'} type='regular' />
+                  </TouchableOpacity>
+
+                  <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), right: this.getSizeStyles().width / 2 - playIconSize - 20, alignItems: 'center' }}>
+                    { rewindParams.rewindTimeForth ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`+${rewindParams.rewindTimeForth} sec`}</Text> : null }
+                  </View>
+                  <TouchableOpacity style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: this.getSizeStyles().width / 2 - playIconSize - 5, alignItems: 'center' }} onPress={this.props.onPressForward}>
+                    <IconFA style={{ alignSelf: 'center' }} name='redo-alt' size={rewindIconSize} color={'white'} type='regular' />
+                  </TouchableOpacity>
+                </>
+                : null
+            }
+            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 0, alignItems: 'center' }}>
+              <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginRight: -5 }} >swipe</Text>
+              <Icon name={'chevron-right'} color={'white'} size={32}/>
+            </View>
+          </>
+          : <>
+            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 50, alignItems: 'center'}}>
+              <TouchableOpacity onPress={() => this.props.onSkipVideo('prev')}>
+                <Icon name={'skip-previous'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 50, alignItems: 'center'}}>
+              <TouchableOpacity onPress={() => this.props.onSkipVideo('next')}>
+                <Icon name={'skip-next'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+              </TouchableOpacity>
+            </View>
+          </>}
 
 
         <TouchableOpacity
@@ -468,15 +513,16 @@ export default class VideoPlayer extends Component {
             {
               position: 'absolute',
               top: -this.getSizeStyles().height / 2 + (isTablet ? 15 : 30),
-              left: this.getSizeStyles().width / 2 - (isTablet ? 45 : 30) }
+              left: playLeft }
           ]}
         >
           <Icon
-              style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
-              name={this.state.isPlaying ? 'pause' : 'play-arrow'}
-              size={isTablet ? 80 : 52}
+            style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
+            name={this.state.isPlaying ? 'pause' : 'play-arrow'}
+            size={playIconSize}
           />
-    </TouchableOpacity>
+
+        </TouchableOpacity>
         {this.renderSeekBar()}
 
         {/* <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
@@ -516,6 +562,7 @@ export default class VideoPlayer extends Component {
       customStyles,
       ...props
     } = this.props;
+
     return (
       <View style={customStyles.videoWrapper}>
         <Video
@@ -534,30 +581,31 @@ export default class VideoPlayer extends Component {
           onLoad={this.onLoad}
           source={video}
           resizeMode={resizeMode}
-      />
-        <View
-        style={[
-          this.getSizeStyles(),
-          { marginTop: -this.getSizeStyles().height },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.overlayButton}
-          onPress={() => {
-            this.showControls();
-            if (pauseOnPress)
-              this.onPlayPress();
-          }}
-          onLongPress={() => {
-            if (fullScreenOnLongPress && Platform.OS !== 'android')
-              this.onToggleFullScreen();
-          }}
+          textTracks={[]}
         />
-      </View>
+        <View
+          style={[
+            this.getSizeStyles(),
+            { marginTop: -this.getSizeStyles().height },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.overlayButton}
+            onPress={() => {
+              this.showControls();
+              if (pauseOnPress)
+                this.onPlayPress();
+            }}
+            onLongPress={() => {
+              if (fullScreenOnLongPress && Platform.OS !== 'android')
+                this.onToggleFullScreen();
+            }}
+          />
+        </View>
         {((!this.state.isPlaying) || this.state.isControlsVisible)
           ? this.renderControls()
           : null}
-          {/* : this.renderSeekBar(true)} */}
+        {/* : this.renderSeekBar(true)} */}
       </View>
     );
   }
@@ -573,7 +621,7 @@ export default class VideoPlayer extends Component {
         <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>
           {this.renderStartButton()}
         </View>
-    );
+      );
     }
     return this.renderVideo();
   }
