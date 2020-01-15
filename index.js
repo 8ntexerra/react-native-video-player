@@ -440,7 +440,7 @@ export default class VideoPlayer extends Component {
   }
 
   renderControls() {
-    const { customStyles, liveRewind, rewindParams } = this.props;
+    const { customStyles, liveRewind, rewindParams, isLive } = this.props;
     const isHLS = this.playerMode === 'TV'
 
     const playLeft = this.getSizeStyles().width / 2 - (isTablet ? 45 : 30)
@@ -483,7 +483,7 @@ export default class VideoPlayer extends Component {
                   <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), right: rewindRight - 20, alignItems: 'center' }}>
                     { rewindParams.rewindTimeForth ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`+${rewindParams.rewindTimeForth} sec`}</Text> : null }
                   </View>
-                  <TouchableOpacity style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center' }} onPress={this.props.onPressForward}>
+                  <TouchableOpacity disabled={isLive} style={{ opacity: isLive ? 0.4 : 1, flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center' }} onPress={this.props.onPressForward}>
                     <IconFA style={{ alignSelf: 'center' }} name='redo-alt' size={rewindIconSize} color={'white'} type='regular' />
                   </TouchableOpacity>
                 </>
