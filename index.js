@@ -10,9 +10,10 @@ import {
   ViewPropTypes,
   Animated
 } from 'react-native'
+import Video from 'react-native-video'; // eslint-disable-line
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import IconFA from 'react-native-fontawesome-pro';
-import Video from 'react-native-video'; // eslint-disable-line
+import LinearGradient from 'react-native-linear-gradient'
 
 import { stats } from '../../src/services/stats'
 import { isTablet } from '../../src/styles'
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
   extraControl: {
     color: 'white',
     padding: 8,
+    marginTop: 12
   },
   seekBar: {
     alignItems: 'center',
@@ -380,18 +382,18 @@ export default class VideoPlayer extends Component {
     const { thumbnail, style, customStyles, ...props } = this.props;
     return (
       <Image
-      {...props}
-      style={[
-        styles.thumbnail,
-        this.getSizeStyles(),
-        style,
-        customStyles.thumbnail,
-      ]}
-      source={thumbnail}
-     >
-      {this.renderStartButton()}
-    </Image>
-  );
+        {...props}
+        style={[
+          styles.thumbnail,
+          this.getSizeStyles(),
+          style,
+          customStyles.thumbnail,
+        ]}
+        source={thumbnail}
+      >
+        {this.renderStartButton()}
+      </Image>
+    );
   }
 
   renderSeekBar(fullWidth) {
@@ -406,36 +408,36 @@ export default class VideoPlayer extends Component {
         ]}
         onLayout={this.onSeekBarLayout}
       >
-      <View
-        style={[
-          { flexGrow: this.state.progress },
-          styles.seekBarProgress,
-          customStyles.seekBarProgress,
-        ]}
-    />
-    {!fullWidth && !disableSeek ? (
-      <View
-        style={[
-          styles.seekBarKnob,
-          customStyles.seekBarKnob,
-          this.state.isSeeking ? { transform: [{ scale: 1 }] } : {},
-          this.state.isSeeking ? customStyles.seekBarKnobSeeking : {},
-        ]}
-      hitSlop={{ top: 20, bottom: 20, left: 10, right: 20 }}
-      onStartShouldSetResponder={this.onSeekStartResponder}
-      onMoveShouldSetPanResponder={this.onSeekMoveResponder}
-      onResponderGrant={this.onSeekGrant}
-      onResponderMove={this.onSeek}
-      onResponderRelease={this.onSeekRelease}
-      onResponderTerminate={this.onSeekRelease}
-      />
-    ) : null}
-      {/* <View style={[
+        <View
+          style={[
+            { flexGrow: this.state.progress },
+            styles.seekBarProgress,
+            customStyles.seekBarProgress,
+          ]}
+        />
+        {!fullWidth && !disableSeek ? (
+          <View
+            style={[
+              styles.seekBarKnob,
+              customStyles.seekBarKnob,
+              this.state.isSeeking ? { transform: [{ scale: 1 }] } : {},
+              this.state.isSeeking ? customStyles.seekBarKnobSeeking : {},
+            ]}
+            hitSlop={{ top: 20, bottom: 20, left: 10, right: 20 }}
+            onStartShouldSetResponder={this.onSeekStartResponder}
+            onMoveShouldSetPanResponder={this.onSeekMoveResponder}
+            onResponderGrant={this.onSeekGrant}
+            onResponderMove={this.onSeek}
+            onResponderRelease={this.onSeekRelease}
+            onResponderTerminate={this.onSeekRelease}
+          />
+        ) : null}
+        {/* <View style={[
       styles.seekBarBackground,
       { flexGrow: 1 - this.state.progress },
       customStyles.seekBarBackground,
     ]} /> */}
-    </View>
+      </View>
     );
   }
 
@@ -450,107 +452,135 @@ export default class VideoPlayer extends Component {
     const rewindLeft = (this.getSizeStyles().width - playIconSize)  / 2 - rewindIconSize * 1.5
 
     return (
-      <View style={[styles.controls, customStyles.controls, !isTablet ? { marginTop: -60 } : {} ]}>
-        {isHLS ?
-          <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
-            <Icon
-              style={[styles.extraControl, customStyles.controlIcon, { color: 'red' }]}
-              name={'fiber-manual-record'}
-              color='#FF0000'
-              size={18}
-            />
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginTop: 10}}>LIVE</Text>
-          </View>
-          : <View style={[customStyles.controlButton, { margin: 30 }]} />}
+      <>
+        <LinearGradient
+          style={{ zIndex: 1, position: 'absolute', bottom: isTablet ? -15 : 0, width: '100%', height: this.getSizeStyles().height, borderRadius: 20 }}
+          start={{ x: 1, y: 1 }} end={{ x: 1, y: 0 }}
+          locations={[1, 0.0]}
+          colors={['rgba(27,35,55,0.08)', 'rgba(27,35,55,0.80)']}
+        />
+        <View style={[styles.controls, customStyles.controls, { zIndex: 2 }, !isTablet ? { marginTop: -60 } : {} ]}>
+          { isHLS ?
+            <TouchableOpacity
+              style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 12, marginLeft: 10, alignItems: 'center', paddingVertical: 3, paddingHorizontal: 8, borderRadius: 13 }, !isLive && { backgroundColor: '#FFFFFF78', }]}
+              disabled={isLive}
+              onPress={this.props.onPressLive}
+            >
+              <Icon
+                style={[customStyles.controlIcon, { color: isLive ? '#FA6262' : '#FFFFFF' }]}
+                name={'fiber-manual-record'}
+                size={10}
+              />
+              <Text style={{ color: 'white', fontSize: isTablet ? 14 : 12, marginLeft: 3, fontFamily: 'IBMPlexSansCond'}}>LIVE</Text>
+            </TouchableOpacity>
+            : <View style={[customStyles.controlButton, { margin: 30 }]} />
+          }
 
-        {isHLS
-          ? <>
-            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 0, alignItems: 'center' }}>
-              <Icon name={'chevron-left'} color={'white'} size={32}/>
-              <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginLeft: -5 }} >swipe</Text>
-
-            </View>
-            {
-              liveRewind
-                ? <>
-                  <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), left: rewindLeft - 10, alignItems: 'center' }}>
-                    { rewindParams.rewindTimeBack ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`${rewindParams.rewindTimeBack} sec`}</Text> : null }
-                  </View>
-                  <TouchableOpacity style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), left: rewindLeft, alignItems: 'center' }} onPress={this.onPressReplay}>
-                    <IconFA name='undo-alt' size={rewindIconSize} color={'white'} type='regular' />
-                  </TouchableOpacity>
-
-                  <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), right: rewindRight - 20, alignItems: 'center' }}>
-                    { rewindParams.rewindTimeForth ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`+${rewindParams.rewindTimeForth} sec`}</Text> : null }
-                  </View>
-                  <TouchableOpacity disabled={isLive} style={{ opacity: isLive ? 0.4 : 1, flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center' }} onPress={this.props.onPressForward}>
-                    <IconFA style={{ alignSelf: 'center' }} name='redo-alt' size={rewindIconSize} color={'white'} type='regular' />
-                  </TouchableOpacity>
-                </>
-                : null
-            }
-            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 0, alignItems: 'center' }}>
-              <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginRight: -5 }} >swipe</Text>
-              <Icon name={'chevron-right'} color={'white'} size={32}/>
-            </View>
-          </>
-          : <>
-            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 50, alignItems: 'center'}}>
-              <TouchableOpacity onPress={() => this.props.onSkipVideo('prev')}>
-                <Icon name={'skip-previous'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+          {
+            liveRewind ?
+              <TouchableOpacity
+                style={[styles.extraControl, customStyles.controlButton, isTablet ? { marginTop: 4 } : { marginLeft: -10 }]}
+                onPress={this.props.onPressRewindStart}
+              >
+                <Icon
+                  style={[customStyles.controlIcon, { color: '#FFFFFF' }]}
+                  name={'skip-previous'}
+                  size={isTablet ? 28 : 24}
+                />
               </TouchableOpacity>
-            </View>
+              : null
+          }
 
-            <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 50, alignItems: 'center'}}>
-              <TouchableOpacity onPress={() => this.props.onSkipVideo('next')}>
-                <Icon name={'skip-next'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
-              </TouchableOpacity>
-            </View>
-          </>}
+          {isHLS
+            ? <>
+              <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 0, alignItems: 'center' }}>
+                {/* 55% hex opacity */}
+                <Icon style={{ color: '#FFFFFF8C' }} name={'chevron-left'} size={32}/>
+                <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginLeft: -5 }} >swipe</Text>
+
+              </View>
+              {
+                liveRewind
+                  ? <>
+                    <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), left: rewindLeft - 10, alignItems: 'center' }}>
+                      { rewindParams.rewindTimeBack ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`${rewindParams.rewindTimeBack} sec`}</Text> : null }
+                    </View>
+                    <TouchableOpacity style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), left: rewindLeft, alignItems: 'center' }} onPress={this.onPressReplay}>
+                      <IconFA style={{ padding: 8 }} name='undo-alt' size={rewindIconSize} color={'white'} type='regular' />
+                    </TouchableOpacity>
+
+                    <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), right: rewindLeft - 20, alignItems: 'center' }}>
+                      { rewindParams.rewindTimeForth ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`+${rewindParams.rewindTimeForth} sec`}</Text> : null }
+                    </View>
+                    <TouchableOpacity disabled={isLive} style={{ opacity: isLive ? 0.6 : 1, flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center'}} onPress={this.props.onPressForward}>
+                      <IconFA style={{ padding: 8 }} name='redo-alt' size={rewindIconSize} color={'white'} type='regular' />
+                    </TouchableOpacity>
+                  </>
+                  : null
+              }
+              <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 0, alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12, marginRight: -5 }} >swipe</Text>
+                <Icon style={{ color: '#FFFFFF8C' }} name={'chevron-right'} size={32}/>
+              </View>
+            </>
+            : <>
+              <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, left: 50, alignItems: 'center'}}>
+                <TouchableOpacity onPress={() => this.props.onSkipVideo('prev')}>
+                  <Icon name={'skip-previous'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + 50, right: 50, alignItems: 'center'}}>
+                <TouchableOpacity onPress={() => this.props.onSkipVideo('next')}>
+                  <Icon name={'skip-next'} color={'white'} size={32} style={{ paddingHorizontal: 20 }} />
+                </TouchableOpacity>
+              </View>
+            </>}
 
 
-        <TouchableOpacity
-          onPress={this.onPlayPress}
-          style={[customStyles.controlButton, customStyles.playControl,
-            {
-              position: 'absolute',
-              top: -this.getSizeStyles().height / 2 + (isTablet ? 15 : 30),
-              left: playLeft }
-          ]}
-        >
-          <Icon
-            style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
-            name={this.state.isPlaying ? 'pause' : 'play-arrow'}
-            size={playIconSize}
-          />
-
-        </TouchableOpacity>
-        {this.renderSeekBar()}
-
-        {/* <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginTop: 10}}>{this.state.duration}</Text>
-          </View> */}
-
-        {this.props.muted ? null : (
-          <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
+          <TouchableOpacity
+            onPress={this.onPlayPress}
+            style={[customStyles.controlButton, customStyles.playControl,
+              {
+                position: 'absolute',
+                top: -this.getSizeStyles().height / 2 + (isTablet ? 15 : 30),
+                left: playLeft }
+            ]}
+          >
             <Icon
-              style={[styles.extraControl, customStyles.controlIcon, isTablet ? { marginTop: 4 } : {}]}
-              name={this.state.isMuted ? 'volume-off' : 'volume-up'}
-              size={24}
+              style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
+              name={this.state.isPlaying ? 'pause' : 'play-arrow'}
+              size={playIconSize}
             />
-          </TouchableOpacity>
-        )}
 
-        {(Platform.OS === 'android' || this.props.disableFullscreen) ? null : (
-          <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
-            <Icon
-              style={[styles.extraControl, customStyles.controlIcon]}
-              name="fullscreen"
-              size={32}
-            />
           </TouchableOpacity>
-        )}
-      </View>
+          {this.renderSeekBar()}
+
+          {/* <View style={[customStyles.controlButton, { flexDirection: 'row', marginTop: 5 }]}>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginTop: 10}}>{this.state.duration}</Text>
+              </View> */}
+
+          {this.props.muted ? null : (
+            <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
+              <Icon
+                style={[styles.extraControl, customStyles.controlIcon, isTablet ? { marginTop: 4 } : {}]}
+                name={this.state.isMuted ? 'volume-off' : 'volume-up'}
+                size={24}
+              />
+            </TouchableOpacity>
+          )}
+
+          {(Platform.OS === 'android' || this.props.disableFullscreen) ? null : (
+            <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
+              <Icon
+                style={[styles.extraControl, customStyles.controlIcon, isTablet ? { marginTop: 0 } : {}]}
+                name="fullscreen"
+                size={32}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </>
     );
   }
 
