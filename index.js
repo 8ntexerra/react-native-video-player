@@ -476,7 +476,7 @@ export default class VideoPlayer extends Component {
             : <View style={[customStyles.controlButton, { margin: 30 }]} />
           }
 
-          {
+          {/*{
             liveRewind ?
               <TouchableOpacity
                 style={[styles.extraControl, customStyles.controlButton, isTablet ? { marginTop: 4 } : { marginLeft: -10 }]}
@@ -489,7 +489,7 @@ export default class VideoPlayer extends Component {
                 />
               </TouchableOpacity>
               : null
-          }
+          }*/}
 
           {isHLS
             ? <>
