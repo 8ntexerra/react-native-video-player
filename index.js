@@ -512,7 +512,7 @@ export default class VideoPlayer extends Component {
                     <View style={{ flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 20 : 30), right: rewindLeft - 20, alignItems: 'center' }}>
                       { rewindParams.rewindTimeForth ? <Text style={{ color: 'white', fontFamily: 'IBMPlexSansCond', fontSize: 12 }}>{`+${rewindParams.rewindTimeForth} sec`}</Text> : null }
                     </View>
-                    <TouchableOpacity disabled={isLive} style={{ opacity: isLive ? 0.6 : 1, flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center'}} onPress={this.props.onPressForward}>
+                    <TouchableOpacity disabled={isLive} style={{ opacity: isLive ? 0.4 : 1, flexDirection: 'row', position: 'absolute', top: -this.getSizeStyles().height / 2 + (isTablet ? 48 : 55), right: rewindRight, alignItems: 'center'}} onPress={this.props.onPressForward}>
                       <IconFA style={{ padding: 8 }} name='redo-alt' size={rewindIconSize} color={'white'} type='regular' />
                     </TouchableOpacity>
                   </>
