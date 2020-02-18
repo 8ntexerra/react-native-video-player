@@ -116,6 +116,7 @@ export default class VideoPlayer extends Component {
 
     this.seekBarWidth = 200;
     this.wasPlayingBeforeSeek = false;
+    this.wasRecordingBeforeSeek = false;
     this.seekTouchStart = 0;
     this.seekProgressStart = 0;
     // monkey patching
@@ -151,6 +152,14 @@ export default class VideoPlayer extends Component {
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
       this.controlsTimeout = null;
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.isRecording !== prevProps.isRecording) {
+      if (this.player && this.props.isRecording) {
+        this.player.dismissFullscreenPlayer()
+      } 
     }
   }
 
@@ -242,9 +251,9 @@ export default class VideoPlayer extends Component {
       this.props.onPlayPress();
     }
 
-    this.setState({
-      isPlaying: !this.state.isPlaying,
-    }, this.statisticsCall);
+    this.setState(prevState => ({
+      isPlaying: this.props.isRecording ? false : !prevState.isPlaying,
+    }), this.statisticsCall);
     this.showControls();
   }
 
@@ -256,7 +265,7 @@ export default class VideoPlayer extends Component {
   }
 
   onToggleFullScreen() {
-    this.player.presentFullscreenPlayer();
+    !this.props.isRecording && this.player.presentFullscreenPlayer();
   }
 
   onSeekBarLayout({ nativeEvent }) {
@@ -593,6 +602,7 @@ export default class VideoPlayer extends Component {
       pauseOnPress,
       fullScreenOnLongPress,
       customStyles,
+      isRecording,
       ...props
     } = this.props;
 
@@ -608,7 +618,7 @@ export default class VideoPlayer extends Component {
           ]}
           ref={p => { this.player = p; }}
           muted={this.props.muted || this.state.isMuted}
-          paused={!this.state.isPlaying}
+          paused={!this.state.isPlaying || isRecording}
           onProgress={this.onProgress}
           onEnd={this.onEnd}
           onLoad={this.onLoad}
