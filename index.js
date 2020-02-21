@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
   Image,
@@ -10,7 +10,7 @@ import {
   ViewPropTypes,
   Animated
 } from 'react-native'
-import Video, { withScreenRecordingDetection } from 'react-native-video';
+import Video from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import IconFA from 'react-native-fontawesome-pro';
 import LinearGradient from 'react-native-linear-gradient'
@@ -18,7 +18,43 @@ import LinearGradient from 'react-native-linear-gradient'
 import { stats } from '../../src/services/stats'
 import { isTablet } from '../../src/styles'
 
-const VideoWrappedComponent = withScreenRecordingDetection(Video)
+
+import ScreenRecordingDetector, { getScreenRecordingStatus } from 'react-native-screen-recording-detector'
+
+const useScreenRecordingStatus = () => {
+  const [recording, setRecording] = useState(false)
+  getScreenRecordingStatus().then(isRecording => setRecording(isRecording))
+
+  useEffect(() => {
+    const subscription = ScreenRecordingDetector.addListener(
+      'RecordingStatusDidChange',
+      ({ isRecording }) => {
+        setRecording(isRecording)
+      }
+    )
+
+    return () => subscription.remove()
+  }, [])
+
+  return recording
+}
+
+
+export const withScreenRecordingDetection = Component => 
+React.forwardRef((props, ref) => {
+  const isScreenRecording = useScreenRecordingStatus()
+
+
+  console.log('withScreenRecordingDetection', isScreenRecording)
+
+  return (
+    <Component 
+      { ...props } 
+      ref={ref} 
+      isScreenRecording={isScreenRecording}
+      />
+    )
+})
 
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
@@ -100,20 +136,24 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class VideoPlayer extends Component {
+class VideoPlayer extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
       isStarted: props.autoplay,
       isPlaying: props.autoplay,
+      isLoading: true,
+      playbackRate: props.autoplay ? 1 : 0,
+      fullscreen: props.fullscreen,
       width: 200,
       progress: 0,
       isMuted: props.defaultMuted,
       isControlsVisible: !props.hideControlsOnStart,
       duration: 0,
       isSeeking: false,
-      stats: false
+      stats: false,
+      video: { ...props.video }
     };
 
     this.seekBarWidth = 200;
@@ -232,22 +272,36 @@ export default class VideoPlayer extends Component {
     }
   }
 
+  onLoadStart = event => {
+    this.setState({
+      isLoading: true
+    })
+
+  }
+
   onLoad(event) {
     if (this.props.onLoad) {
       this.props.onLoad(event);
     }
 
     const { duration } = event;
-    this.setState({ duration }, this.statisticsCall)
+    this.setState({ 
+        isLoading: false,
+        isStarted: true,
+        duration, 
+        isPlaying: !this.props.isScreenRecording && this.props.autoplay,
+      }, this.statisticsCall)
   }
 
-  onPlayPress(isPlaying) {
+  onPlayPress() {
+    if (this.props.isScreenRecording) return
+
     if (this.props.onPlayPress) {
       this.props.onPlayPress();
     }
 
     this.setState(prevState => ({
-      isPlaying: isPlaying !== undefined ? isPlaying : !prevState.isPlaying,
+      isPlaying: !prevState.isPlaying,
     }), this.statisticsCall);
     this.showControls();
   }
@@ -260,10 +314,14 @@ export default class VideoPlayer extends Component {
   }
 
   onToggleFullScreen() {
-    if (this.player) {
+    console.log(this.props.isScreenRecording)
+
+    if (this.player && !this.props.isScreenRecording) {
+      // console.log('----> onToggleFullScreen success', this.player)
       this.player.presentFullscreenPlayer();
     }
   }
+  
 
   onSeekBarLayout({ nativeEvent }) {
     const customStyle = this.props.customStyles.seekBar;
@@ -334,6 +392,54 @@ export default class VideoPlayer extends Component {
     this.hideControls()
   }
 
+  onFullscreenPlayerDidPresent = () => {
+    // console.log('----> onFullscreenPlayerDidPresent')
+
+    this.setState(prevState => ({ 
+      fullscreen: true,
+      isPlaying: this.props.initPlayingInFullScreen ? true : prevState.isPlaying,
+      playbackRate: this.props.initPlayingInFullScreen ? true : prevState.isPlaying
+     }))
+  }
+
+
+  onFullscreenPlayerDidDismiss = () => {
+    this.setState({ 
+      fullscreen: false,
+      isPlaying: false // to correct controls when player pauses in the native side after dismissing fullscreen mode 
+     }, 
+     // TODO: still does not work because of the asynchronocy
+    //  () => {
+      //  this.setState(prevState => console.log('-----> onFullscreenPlayerDidDismiss', this.state.playbackRate, prevState.playbackRate) || ({
+        // isPlaying: this.props.pauseOnDismiss || this.props.isScreenRecording ? prevState.isPlaying : !!this.state.playbackRate // to change playing state after playbackRate changed in native side
+      //  }))
+    //  }
+     )
+  }
+
+  onPlaybackRateChange = ({ playbackRate }) => {
+    // console.log('onPlaybackRateChange', playbackRate, this.state.fullscreen)
+
+    if (this.state.fullscreen) {
+      this.setState({ playbackRate })
+    }
+  }
+
+  componentDidUpdate (prevProps, prevState) {
+    // programmatically start playing only in fullscreen mode with the default autoplay=false
+    if (prevState.isLoading !== this.state.isLoading || prevState.fullscreen !== this.state.fullscreen) {
+      if (!this.state.isLoading && this.state.fullscreen && this.props.initPlayingInFullScreen) {
+        this.setState({ isPlaying: true })
+      }
+    }
+
+    if (prevProps.isScreenRecording !== this.props.isScreenRecording) {
+      if (this.props.isScreenRecording && this.state.fullscreen) {
+        this.player.dismissFullscreenPlayer()
+      } 
+    }
+  }
+
   getSizeStyles() {
     const { videoWidth, videoHeight } = this.props;
     const { width } = this.state;
@@ -374,7 +480,6 @@ export default class VideoPlayer extends Component {
   }
 
   renderStartButton() {
-    console.log('----> renderStartButton')
     const { customStyles } = this.props;
     return (
       <TouchableOpacity
@@ -593,8 +698,6 @@ export default class VideoPlayer extends Component {
   }
 
   renderVideo() {
-    console.log('-----> renderContent')
-
     const {
       video,
       style,
@@ -607,7 +710,7 @@ export default class VideoPlayer extends Component {
 
     return (
       <View style={customStyles.videoWrapper}>
-        <VideoWrappedComponent
+        <Video
           {...props}
           style={[
             styles.video,
@@ -616,14 +719,18 @@ export default class VideoPlayer extends Component {
             customStyles.video,
           ]}
           ref={p => { this.player = p; }}
-          muted={this.props.muted || this.state.isMuted}
-          paused={!this.state.isPlaying}
-          onProgress={this.onProgress}
-          onEnd={this.onEnd}
-          onLoad={this.onLoad}
           source={video}
           resizeMode={resizeMode}
           textTracks={[]}
+          muted={this.props.muted || this.state.isMuted}
+          paused={!this.state.isPlaying}
+          onProgress={this.onProgress}
+          onLoadStart={this.onLoadStart}
+          onLoad={this.onLoad}
+          onEnd={this.onEnd}
+          onFullscreenPlayerDidPresent={this.onFullscreenPlayerDidPresent}
+          onFullscreenPlayerDidDismiss={this.onFullscreenPlayerDidDismiss}
+          onPlaybackRateChange={this.onPlaybackRateChange}
         />
         <View
           style={[
@@ -659,23 +766,13 @@ export default class VideoPlayer extends Component {
     if (!isStarted && thumbnail) {
       return this.renderThumbnail();
     } 
-    // else if (!isStarted) {
-    //   return (
-    //     <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>
-    //       {this.renderStartButton()}
-    //     </View>
-    //   );
-    // }
+
     return (
       this.renderVideo()
     )
   }
 
   render() {
-
-    console.log('----> render Video PLayer', this.state)
-
-
     return (
       <View onLayout={this.onLayout} style={this.props.customStyles.wrapper}>
         {this.renderContent()}
@@ -745,3 +842,6 @@ VideoPlayer.defaultProps = {
   fullScreenOnLongPress: false,
   customStyles: {},
 };
+
+
+export default withScreenRecordingDetection(VideoPlayer)
