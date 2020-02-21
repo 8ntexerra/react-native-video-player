@@ -10,13 +10,15 @@ import {
   ViewPropTypes,
   Animated
 } from 'react-native'
-import Video from 'react-native-video'; // eslint-disable-line
+import Video, { withScreenRecordingDetection } from 'react-native-video';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import IconFA from 'react-native-fontawesome-pro';
 import LinearGradient from 'react-native-linear-gradient'
 
 import { stats } from '../../src/services/stats'
 import { isTablet } from '../../src/styles'
+
+const VideoWrappedComponent = withScreenRecordingDetection(Video)
 
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
@@ -155,13 +157,6 @@ export default class VideoPlayer extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
-    if (this.props.isRecording !== prevProps.isRecording) {
-      if (this.player && this.props.isRecording) {
-        this.player.dismissFullscreenPlayer()
-      } 
-    }
-  }
 
   _deactivateStatistics () {
     stats.deactivate()
@@ -246,13 +241,13 @@ export default class VideoPlayer extends Component {
     this.setState({ duration }, this.statisticsCall)
   }
 
-  onPlayPress() {
+  onPlayPress(isPlaying) {
     if (this.props.onPlayPress) {
       this.props.onPlayPress();
     }
 
     this.setState(prevState => ({
-      isPlaying: this.props.isRecording ? false : !prevState.isPlaying,
+      isPlaying: isPlaying !== undefined ? isPlaying : !prevState.isPlaying,
     }), this.statisticsCall);
     this.showControls();
   }
@@ -265,7 +260,9 @@ export default class VideoPlayer extends Component {
   }
 
   onToggleFullScreen() {
-    !this.props.isRecording && this.player.presentFullscreenPlayer();
+    if (this.player) {
+      this.player.presentFullscreenPlayer();
+    }
   }
 
   onSeekBarLayout({ nativeEvent }) {
@@ -377,6 +374,7 @@ export default class VideoPlayer extends Component {
   }
 
   renderStartButton() {
+    console.log('----> renderStartButton')
     const { customStyles } = this.props;
     return (
       <TouchableOpacity
@@ -595,6 +593,8 @@ export default class VideoPlayer extends Component {
   }
 
   renderVideo() {
+    console.log('-----> renderContent')
+
     const {
       video,
       style,
@@ -602,13 +602,12 @@ export default class VideoPlayer extends Component {
       pauseOnPress,
       fullScreenOnLongPress,
       customStyles,
-      isRecording,
       ...props
     } = this.props;
 
     return (
       <View style={customStyles.videoWrapper}>
-        <Video
+        <VideoWrappedComponent
           {...props}
           style={[
             styles.video,
@@ -618,7 +617,7 @@ export default class VideoPlayer extends Component {
           ]}
           ref={p => { this.player = p; }}
           muted={this.props.muted || this.state.isMuted}
-          paused={!this.state.isPlaying || isRecording}
+          paused={!this.state.isPlaying}
           onProgress={this.onProgress}
           onEnd={this.onEnd}
           onLoad={this.onLoad}
@@ -659,17 +658,24 @@ export default class VideoPlayer extends Component {
 
     if (!isStarted && thumbnail) {
       return this.renderThumbnail();
-    } else if (!isStarted) {
-      return (
-        <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>
-          {this.renderStartButton()}
-        </View>
-      );
-    }
-    return this.renderVideo();
+    } 
+    // else if (!isStarted) {
+    //   return (
+    //     <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>
+    //       {this.renderStartButton()}
+    //     </View>
+    //   );
+    // }
+    return (
+      this.renderVideo()
+    )
   }
 
   render() {
+
+    console.log('----> render Video PLayer', this.state)
+
+
     return (
       <View onLayout={this.onLayout} style={this.props.customStyles.wrapper}>
         {this.renderContent()}
@@ -678,8 +684,9 @@ export default class VideoPlayer extends Component {
   }
 }
 
+
 VideoPlayer.propTypes = {
-  video: Video.propTypes.source,
+  // video: Video.propTypes.source,
   thumbnail: Image.propTypes.source,
   videoWidth: PropTypes.number,
   videoHeight: PropTypes.number,
@@ -692,7 +699,7 @@ VideoPlayer.propTypes = {
   disableControlsAutoHide: PropTypes.bool,
   disableFullscreen: PropTypes.bool,
   loop: PropTypes.bool,
-  resizeMode: Video.propTypes.resizeMode,
+  // resizeMode: Video.propTypes.resizeMode,
   hideControlsOnStart: PropTypes.bool,
   endWithThumbnail: PropTypes.bool,
   disableSeek: PropTypes.bool,
@@ -700,7 +707,7 @@ VideoPlayer.propTypes = {
   fullScreenOnLongPress: PropTypes.bool,
   customStyles: PropTypes.shape({
     wrapper: ViewPropTypes.style,
-    video: Video.propTypes.style,
+    // video: Video.propTypes.style,
     videoWrapper: ViewPropTypes.style,
     controls: ViewPropTypes.style,
     playControl: TouchableOpacity.propTypes.style,
