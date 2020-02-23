@@ -15,46 +15,10 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import IconFA from 'react-native-fontawesome-pro';
 import LinearGradient from 'react-native-linear-gradient'
 
+import { withScreenRecordingDetection } from './withScreenRecordingDetection'
+
 import { stats } from '../../src/services/stats'
 import { isTablet } from '../../src/styles'
-
-
-import ScreenRecordingDetector, { getScreenRecordingStatus } from 'react-native-screen-recording-detector'
-
-const useScreenRecordingStatus = () => {
-  const [recording, setRecording] = useState(false)
-  getScreenRecordingStatus().then(isRecording => setRecording(isRecording))
-
-  useEffect(() => {
-    const subscription = ScreenRecordingDetector.addListener(
-      'RecordingStatusDidChange',
-      ({ isRecording }) => {
-        setRecording(isRecording)
-      }
-    )
-
-    return () => subscription.remove()
-  }, [])
-
-  return recording
-}
-
-
-export const withScreenRecordingDetection = Component => 
-React.forwardRef((props, ref) => {
-  const isScreenRecording = useScreenRecordingStatus()
-
-
-  console.log('withScreenRecordingDetection', isScreenRecording)
-
-  return (
-    <Component 
-      { ...props } 
-      ref={ref} 
-      isScreenRecording={isScreenRecording}
-      />
-    )
-})
 
 const styles = StyleSheet.create({
   preloadingPlaceholder: {
@@ -143,9 +107,11 @@ class VideoPlayer extends Component {
     this.state = {
       isStarted: props.autoplay,
       isPlaying: props.autoplay,
-      isLoading: true,
+      isLoading: false,
+      hasLoaded: false,
       playbackRate: props.autoplay ? 1 : 0,
       fullscreen: props.fullscreen,
+      fullscreenToggled: false,
       width: 200,
       progress: 0,
       isMuted: props.defaultMuted,
@@ -287,6 +253,7 @@ class VideoPlayer extends Component {
     const { duration } = event;
     this.setState({ 
         isLoading: false,
+        hasLoaded: true,
         isStarted: true,
         duration, 
         isPlaying: !this.props.isScreenRecording && this.props.autoplay,
@@ -313,13 +280,8 @@ class VideoPlayer extends Component {
     this.showControls();
   }
 
-  onToggleFullScreen() {
-    console.log(this.props.isScreenRecording)
-
-    if (this.player && !this.props.isScreenRecording) {
-      // console.log('----> onToggleFullScreen success', this.player)
-      this.player.presentFullscreenPlayer();
-    }
+  onToggleFullScreen = () => {
+    this.setState({ fullscreenToggled: true })
   }
   
 
@@ -393,8 +355,6 @@ class VideoPlayer extends Component {
   }
 
   onFullscreenPlayerDidPresent = () => {
-    // console.log('----> onFullscreenPlayerDidPresent')
-
     this.setState(prevState => ({ 
       fullscreen: true,
       isPlaying: this.props.initPlayingInFullScreen ? true : prevState.isPlaying,
@@ -406,11 +366,12 @@ class VideoPlayer extends Component {
   onFullscreenPlayerDidDismiss = () => {
     this.setState({ 
       fullscreen: false,
-      isPlaying: false // to correct controls when player pauses in the native side after dismissing fullscreen mode 
+      isPlaying: false, // to correct controls when player pauses in the native side after dismissing fullscreen mode 
+      fullscreenToggled: false
      }, 
      // TODO: still does not work because of the asynchronocy
     //  () => {
-      //  this.setState(prevState => console.log('-----> onFullscreenPlayerDidDismiss', this.state.playbackRate, prevState.playbackRate) || ({
+      //  this.setState(prevState => ({
         // isPlaying: this.props.pauseOnDismiss || this.props.isScreenRecording ? prevState.isPlaying : !!this.state.playbackRate // to change playing state after playbackRate changed in native side
       //  }))
     //  }
@@ -418,14 +379,28 @@ class VideoPlayer extends Component {
   }
 
   onPlaybackRateChange = ({ playbackRate }) => {
-    // console.log('onPlaybackRateChange', playbackRate, this.state.fullscreen)
-
     if (this.state.fullscreen) {
       this.setState({ playbackRate })
     }
   }
 
   componentDidUpdate (prevProps, prevState) {
+    // fullscreen can't be activated if video diddn't start loading. 
+    // this.player.presentFullscreenPlayer() can't be call inside this.onToggleFullScreen() as player may not have got the props URL to start loading the stream
+    if (prevState.fullscreenToggled !== this.state.fullscreenToggled || prevState.isLoading !== this.state.isLoading) {
+      if (this.state.fullscreenToggled && (this.state.isLoading || this.state.hasLoaded)) {
+
+        // can't be checked in this.onToggleFullScreen() 
+        // 1. because it's called in the refs and props may not have been changed yet
+        // TODO: 2. props doesn't changed at all  
+        if (!this.props.isScreenRecording) { 
+          this.player.presentFullscreenPlayer()
+        } else {
+          this.setState({ fullscreenToggled: false })
+        }
+      }
+    }
+
     // programmatically start playing only in fullscreen mode with the default autoplay=false
     if (prevState.isLoading !== this.state.isLoading || prevState.fullscreen !== this.state.fullscreen) {
       if (!this.state.isLoading && this.state.fullscreen && this.props.initPlayingInFullScreen) {
@@ -434,8 +409,8 @@ class VideoPlayer extends Component {
     }
 
     if (prevProps.isScreenRecording !== this.props.isScreenRecording) {
-      if (this.props.isScreenRecording && this.state.fullscreen) {
-        this.player.dismissFullscreenPlayer()
+      if (this.props.isScreenRecording) {
+        this.state.fullscreen ? this.player.dismissFullscreenPlayer() : this.setState({ isPlaying: false })
       } 
     }
   }
