@@ -228,13 +228,18 @@ class VideoPlayer extends Component {
       this.player.dismissFullscreenPlayer();
     }
 
-    this.setState({ progress: 1 });
+    // can't call seek here because it calls play action (as it wasn't be paused before seeking) which re-writes isPlaying prop on native side and starts playing from the beginning
+    // see - (void)setSeek:(NSDictionary *)info in RCTVideo.m implementation
+    // this.player.seek(0); 
 
-    this.player.seek(0);
     if (!this.props.loop) {
       this.setState({
         isPlaying: false,
-      }, this.statisticsCall);
+        progress: 0 // set coorect progress for UI fixes
+      }, () => {
+        this.player.seek(0) // can be called here as it takes previous (already paused) state
+        this.statisticsCall()
+      })
     }
   }
 
@@ -699,6 +704,7 @@ class VideoPlayer extends Component {
           textTracks={[]}
           muted={this.props.muted || this.state.isMuted}
           paused={!this.state.isPlaying}
+          repeat={false}
           onProgress={this.onProgress}
           onLoadStart={this.onLoadStart}
           onLoad={this.onLoad}
