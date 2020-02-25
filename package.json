@@ -22,14 +22,14 @@
     "react-native": "*",
     "react-native-linear-gradient": "^2.5.6",
     "react-native-vector-icons": ">= 2.1.0",
-    "react-native-video": "^5.0.2"
+    "react-native-video": "^5.0.2",
+    "react-native-screen-recording-detector": "./native_modules/react-native-screen-recording-detector/"
   },
   "devDependencies": {
     "eslint": "^3.4.0",
     "eslint-config-airbnb": "^10.0.1",
     "eslint-plugin-import": "^1.14.0",
     "eslint-plugin-jsx-a11y": "^2.2.1",
-    "eslint-plugin-react": "^6.2.0",
-    "react-native-screen-recording-detector": "./native_modules/react-native-screen-recording-detector/"
+    "eslint-plugin-react": "^6.2.0"
   }
 }
