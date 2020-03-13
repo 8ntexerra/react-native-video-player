@@ -27,7 +27,7 @@ export const withScreenRecordingDetection = Component =>
       <Component
         {...props}
         ref={ref}
-        isScreenRecording={isScreenRecording}
+        isScreenRecording={props.recordingDetectionEnabled && isScreenRecording}
       />
     )
   })
