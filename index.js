@@ -256,7 +256,9 @@ export default class VideoPlayer extends Component {
   }
 
   onToggleFullScreen() {
-    this.player.presentFullscreenPlayer();
+    if (this.player) {
+      this.player.presentFullscreenPlayer();
+    }
   }
 
   onSeekBarLayout({ nativeEvent }) {
