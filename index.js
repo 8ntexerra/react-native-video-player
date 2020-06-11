@@ -455,7 +455,7 @@ export default class VideoPlayer extends Component {
     return (
       <>
         <LinearGradient
-          style={{ zIndex: 1, position: 'absolute', bottom: isTablet ? -15 : 0, width: '100%', height: this.getSizeStyles().height, borderRadius: 20 }}
+          style={{ zIndex: 1, position: 'absolute', top: 0, width: '100%', height: '100%', borderRadius: 20 }}
           start={{ x: 1, y: 1 }} end={{ x: 1, y: 0 }}
           locations={[1, 0.0]}
           colors={['rgba(27,35,55,0.08)', 'rgba(27,35,55,0.80)']}
@@ -597,13 +597,14 @@ export default class VideoPlayer extends Component {
     } = this.props;
 
     return (
-      <View style={customStyles.videoWrapper}>
+      <View style={[customStyles.videoWrapper, { height: '100%' }]}>
         <Video
           {...props}
           style={[
             styles.video,
             this.getSizeStyles(),
             style,
+            { height: '100%' },
             customStyles.video,
           ]}
           ref={p => { this.player = p; }}
